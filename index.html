@@ -1,12 +1,29 @@
 <!DOCTYPE html>
 <html lang="th">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MAMA AI Evaluation</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <title>AI Training Evaluation</title>
+</head>
+<body>
+
+  <h2>AI Evaluation Demo</h2>
+
+  <textarea id="transcript" rows="8" cols="80"
+    placeholder="วางข้อความที่แปลงจากเสียงที่นี่"></textarea>
+
+  <br><br>
+  <button onclick="evaluate()">ประเมิน</button>
+
+  <pre id="result"></pre>
+
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Config -->
+  <script src="config.js"></script>
+
+  <!-- App Logic -->
+  <script src="app.js"></script>
+
+</body>
 </html>
