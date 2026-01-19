@@ -17,11 +17,12 @@ const MamaLogo = ({ className = "w-10 h-10" }) => (
 );
 
 // --- Firebase Config (Global Context) ---
-const firebaseConfig = JSON.parse(__firebase_config);
+// Note: __firebase_config is initialized in main.jsx for deployment
+const firebaseConfig = JSON.parse(window.__firebase_config);
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app-id';
 
 // --- Data Structures ---
 const positionOptions = ["CFSA", "CISA", "BM", "WRM", "IS", "IA", "Other"];
@@ -191,9 +192,6 @@ const AdminDashboard = ({ onClose, currentPrompt, onSavePrompt }) => {
   const fetchLeaderboard = async () => {
     setLoading(true);
     try {
-      // Fetch from public leaderboard collection
-      // Note: In a real app with >1000s of records, you'd want compound indexes or server-side aggregation.
-      // For this implementation, we fetch the latest 100 results and filter client-side for dynamic simplicity.
       const q = query(
           collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard'), 
           orderBy('score', 'desc'), 
@@ -208,15 +206,11 @@ const AdminDashboard = ({ onClose, currentPrompt, onSavePrompt }) => {
     setLoading(false);
   };
 
-  // Logic to process data based on filter
   const getProcessedRanking = () => {
     if (loading) return [];
-    
-    // Helper to format date YYYY-MM-DD
     const today = new Date().toISOString().split('T')[0];
 
     if (rankFilter === 'today') {
-      // Top 5 per course for TODAY
       const todaysData = leaderboardData.filter(d => d.dateStr === today);
       const mama1 = todaysData.filter(d => d.course === 'mama1').slice(0, 5);
       const mama2 = todaysData.filter(d => d.course === 'mama2').slice(0, 5);
@@ -227,7 +221,6 @@ const AdminDashboard = ({ onClose, currentPrompt, onSavePrompt }) => {
     }
 
     if (rankFilter === 'rh') {
-      // Top 1 per RH per Course
       const rhList = Object.keys(regionData);
       const courses = ['mama1', 'mama2'];
       let results = [];
@@ -244,7 +237,6 @@ const AdminDashboard = ({ onClose, currentPrompt, onSavePrompt }) => {
     }
 
     if (rankFilter === 'course') {
-      // Top 3 All time per course
       const mama1 = leaderboardData.filter(d => d.course === 'mama1').slice(0, 3);
       const mama2 = leaderboardData.filter(d => d.course === 'mama2').slice(0, 3);
       return [
@@ -254,7 +246,6 @@ const AdminDashboard = ({ onClose, currentPrompt, onSavePrompt }) => {
     }
 
     if (rankFilter === 'champion') {
-      // Top 10 All time mixed
       return [{ title: "Grand Champions (Top 10 All-Time)", data: leaderboardData.slice(0, 10) }];
     }
 
@@ -263,7 +254,6 @@ const AdminDashboard = ({ onClose, currentPrompt, onSavePrompt }) => {
 
   const rankingDisplay = getProcessedRanking();
 
-  // Prompt Configuration Form
   const promptPreview = `
 [SYSTEM ROLE]: คุณคือผู้เชี่ยวชาญด้านการฝึกอบรมการขายของธนาคาร (TTB Training Expert)
 [CONTEXT]: ${trainingTopic || "(ระบุหัวข้อการสอน)"}
@@ -273,7 +263,6 @@ const AdminDashboard = ({ onClose, currentPrompt, onSavePrompt }) => {
 
   return (
     <div className="fixed inset-0 bg-gray-50 z-[50] flex flex-col font-sans animate-in slide-in-from-bottom duration-300">
-      {/* Admin Header */}
       <div className="bg-blue-900 text-white p-6 pb-8 rounded-b-[40px] shadow-lg relative z-10">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-black flex items-center">
@@ -284,7 +273,6 @@ const AdminDashboard = ({ onClose, currentPrompt, onSavePrompt }) => {
           </button>
         </div>
         
-        {/* Tabs */}
         <div className="flex bg-blue-800/50 p-1 rounded-2xl backdrop-blur-sm">
           <button 
             onClick={() => setActiveTab('prompt')}
@@ -335,7 +323,6 @@ const AdminDashboard = ({ onClose, currentPrompt, onSavePrompt }) => {
           </div>
         ) : (
           <div className="space-y-6">
-             {/* Ranking Filters */}
              <div className="flex space-x-2 overflow-x-auto pb-2 no-scrollbar">
                 {[
                   { id: 'today', label: 'Top by Today' },
@@ -353,7 +340,6 @@ const AdminDashboard = ({ onClose, currentPrompt, onSavePrompt }) => {
                 ))}
              </div>
 
-             {/* Ranking List - Grouped by Logic */}
              {loading ? (
                 <div className="text-center py-10 text-gray-400 font-bold text-xs animate-pulse">Loading Leaderboard...</div>
              ) : rankingDisplay.length === 0 ? (
@@ -429,14 +415,12 @@ export default function App() {
 
   const startAnalysis = async () => {
     setView('processing');
-    
-    // Simulate AI Processing & Scoring (In real app, call Cloud Function here)
     const simulatedScore = Math.floor(Math.random() * (98 - 75 + 1)) + 75;
     
     setTimeout(async () => {
       const resultData = {
         total: simulatedScore,
-        score: simulatedScore, // duplicate for easier sorting
+        score: simulatedScore,
         isPassed: simulatedScore >= 70,
         breakdown: [
           { score: Math.floor(simulatedScore * 0.22), max: 20, label: "Voice & Tone" },
@@ -448,13 +432,12 @@ export default function App() {
         aiAdvise: "คุณทำได้ดีมากในการสร้างความสัมพันธ์และเปิดใจลูกค้า น้ำเสียงมีความมั่นใจและเป็นมืออาชีพ...",
         user: user,
         course: course,
-        dateStr: new Date().toISOString().split('T')[0], // For easy daily filtering
+        dateStr: new Date().toISOString().split('T')[0],
         timestamp: serverTimestamp()
       };
 
       setResult(resultData);
 
-      // Save to Firebase (Public Leaderboard for Admin Access)
       try {
         await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard'), resultData);
       } catch (e) {
@@ -861,5 +844,4 @@ export default function App() {
     </div>
   );
 }
-
 
